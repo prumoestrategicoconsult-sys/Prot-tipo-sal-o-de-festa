@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prumo Lite — Salões de Festa</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
+  <style>
+/* Skip artifact shell — fixed styles served beside every artifact.
+   Complements basecoat; artifacts override --accent for their own identity. */
+:root {
+  color-scheme: light dark;
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --accent-text: color-mix(in srgb, var(--accent) 72%, #000);
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --text: #14171f;
+  --text-muted: #5b6472;
+  --border: rgba(20, 23, 31, 0.10);
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(20, 23, 31, 0.08);
+  --space: 16px;
+}
+/* Theme resolution. Without data-theme the viewer's system preference decides,
+   as it always did. With it, the artifact's own choice wins in BOTH directions:
+   a page that hardcodes one palette must not be handed the opposite set of
+   tokens by the machine it happens to be opened on. The dark values appear
+   twice because a media query cannot be folded into a selector list.
+   The attribute sits inside :where() so these blocks keep the specificity of a
+   bare :root — the page's own <style> is linked after this file and must go on
+   overriding any token it wants, exactly as it could before. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+    --bg: #101318;
+    --surface: #181c23;
+    --text: #eef1f6;
+    --text-muted: #9aa4b2;
+    --border: rgba(238, 241, 246, 0.12);
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+:root:where([data-theme="dark"]) {
+  color-scheme: dark;
+  --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+  --bg: #101318;
+  --surface: #181c23;
+  --text: #eef1f6;
+  --text-muted: #9aa4b2;
+  --border: rgba(238, 241, 246, 0.12);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+:root:where([data-theme="light"]) { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+
+.shell-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.shell-section { padding: calc(var(--space) * 2) 0; }
+.shell-grid { display: grid; gap: var(--space); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.shell-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--space); }
+.shell-footer { padding: 24px 0 40px; color: var(--text-muted); font-size: 13px; }
+
+.shell-hero { padding: calc(var(--space) * 3) 0 calc(var(--space) * 2); }
+.shell-hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; text-wrap: balance; }
+.shell-hero p { color: var(--text-muted); max-width: 60ch; margin: 0; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space);
+}
+
+.kpi { display: flex; flex-direction: column; gap: 4px; }
+.kpi .kpi-value { font-size: 28px; font-weight: 650; line-height: 1.1; }
+.kpi .kpi-label { font-size: 13px; color: var(--text-muted); }
+.kpi .kpi-delta { font-size: 12.5px; font-weight: 600; }
+.kpi .kpi-delta.up { color: #0a8f3c; }
+.kpi .kpi-delta.down { color: #cf3131; }
+
+table.shell-table { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.shell-table th {
+  text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text-muted); font-weight: 600;
+}
+table.shell-table th, table.shell-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--border); }
+table.shell-table td.num, table.shell-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+.chart-box { width: 100%; min-height: 220px; }
+.chart-box svg { width: 100%; height: auto; display: block; }
+
+.muted { color: var(--text-muted); }
+.accent { color: var(--accent-text); }
+.shell-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .shell-fade { animation: shell-fade 400ms ease both; }
+  @keyframes shell-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+
+</style>
+  
+  <style>
+    :root {
+      --accent: #C9A227;
+      --accent-hover: #F5D06F;
+      --navy-deep: #0E1B2E;
+      --navy-card: #15263F;
+      --navy-chat: #132238;
+      --navy-bubble: #1C314E;
+      --navy-user-bubble: #2A3620;
+      --gold-border: rgba(201, 162, 39, 0.4);
+      --gold-glow: rgba(201, 162, 39, 0.2);
+      --text-main: #FFFFFF;
+      --text-muted: #A3B3C9;
+      --gold-text: #F5D06F;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--navy-deep);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1, h2, h3, .serif-gold {
+      font-family: 'Cinzel', serif;
+      letter-spacing: 0.08em;
+    }
+
+    /* Container */
+    .app-wrapper {
+      max-width: 580px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 12px 16px 80px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Top utility bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 0;
+    }
+
+    .btn-back {
+      background: transparent;
+      border: none;
+      color: var(--gold-text);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 6px 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: opacity 0.2s;
+    }
+    .btn-back:hover {
+      opacity: 0.8;
+    }
+
+    .status-pill {
+      background: rgba(14, 27, 46, 0.8);
+      border: 1px solid rgba(201, 162, 39, 0.25);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      color: var(--gold-text);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Logo header */
+    .header-logo-section {
+      text-align: center;
+      padding: 6px 0 10px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .brand-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #F5D06F;
+      margin-top: 8px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Info card */
+    .info-card {
+      background: var(--navy-card);
+      border: 1px solid var(--gold-border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+    .info-card-title {
+      font-size: 0.72rem;
+      color: var(--gold-text);
+      margin: 0 0 4px 0;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+    .info-card-desc {
+      font-size: 0.82rem;
+      color: #FFFFFF;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    /* Chat Card container */
+    .chat-container {
+      background: var(--navy-chat);
+      border: 1px solid rgba(201, 162, 39, 0.35);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Chat header */
+    .chat-header {
+      background: rgba(14, 27, 46, 0.95);
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(201, 162, 39, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .chat-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .assistant-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #F5D06F, #C9A227 60%, #8A6A1B);
+      color: #0E1B2E;
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 10px rgba(201, 162, 39, 0.4);
+      flex-shrink: 0;
+    }
+
+    .chat-header-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-header-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #FFFFFF;
+      line-height: 1.2;
+    }
+
+    .chat-header-status {
+      font-size: 0.72rem;
+      color: #E2C264;
+      line-height: 1.2;
+      margin-top: 2px;
+    }
+
+    .chat-step-indicator {
+      font-size: 0.72rem;
+      color: var(--gold-text);
+      font-weight: 600;
+      padding: 3px 8px;
+      border: 1px solid rgba(201, 162, 39, 0.25);
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.25);
+      white-space: nowrap;
+    }
+
+    /* Messages area */
+    .chat-messages {
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 320px;
+      max-height: 520px;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+
+    .chat-bubble {
+      max-width: 86%;
+      padding: 10px 14px;
+      font-size: 0.86rem;
+      line-height: 1.45;
+      border-radius: 14px;
+      word-break: break-word;
+      animation: bubbleIn 0.25s ease-out;
+    }
+
+    @keyframes bubbleIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .bubble-assistant {
+      align-self: flex-start;
+      background: var(--navy-bubble);
+      color: #F0F4FA;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom-left-radius: 3px;
+    }
+
+    .bubble-user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #2E2613, #3D3115);
+      color: #FFFFFF;
+      border: 1px solid rgba(201, 162, 39, 0.4);
+      border-bottom-right-radius: 3px;
+    }
+
+    /* Typing dots */
+    .typing-indicator {
+      align-self: flex-start;
+      background: var(--navy-bubble);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      border-bottom-left-radius: 3px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: #C9A227;
+      border-radius: 50%;
+      animation: dotPulse 1.2s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dotPulse {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1.1); opacity: 1; }
+    }
+
+    /* Pills area */
+    .quick-replies {
+      padding: 8px 14px 12px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      border-top: 1px solid rgba(201, 162, 39, 0.15);
+      background: rgba(14, 27, 46, 0.5);
+    }
+
+    .pill-btn {
+      background: #0E1B2E;
+      border: 1px solid var(--gold-border);
+      color: #FFFFFF;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+      font-weight: 500;
+    }
+    .pill-btn:hover {
+      background: rgba(201, 162, 39, 0.18);
+      border-color: #F5D06F;
+      color: #FFFFFF;
+      transform: translateY(-1px);
+    }
+    .pill-btn.pill-secondary {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.18);
+      color: var(--text-muted);
+    }
+    .pill-btn.pill-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #FFFFFF;
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    /* Input row fixed bottom of chat */
+    .chat-input-bar {
+      padding: 10px 12px;
+      background: #0B1626;
+      border-top: 1px solid rgba(201, 162, 39, 0.25);
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-text-input {
+      flex: 1;
+      background: #142338;
+      border: 1px solid rgba(201, 162, 39, 0.3);
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: 0.84rem;
+      color: #FFFFFF;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .chat-text-input:focus {
+      border-color: #F5D06F;
+      box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.2);
+    }
+    .chat-text-input::placeholder {
+      color: #71829B;
+    }
+
+    .btn-send {
+      background: linear-gradient(135deg, #F5D06F, #C9A227 60%, #8A6A1B);
+      color: #0E1B2E;
+      border: none;
+      border-radius: 6px;
+      padding: 0 16px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.2s;
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+    }
+    .btn-send:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+    .btn-send:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Final Card */
+    .final-card {
+      margin-top: 14px;
+      background: linear-gradient(180deg, #162843, #101F33);
+      border: 1px solid #C9A227;
+      border-radius: 12px;
+      padding: 18px 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(201, 162, 39, 0.15);
+      animation: bubbleIn 0.35s ease-out;
+    }
+
+    .final-card-title {
+      font-size: 1rem;
+      color: #F5D06F;
+      margin: 0 0 12px 0;
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .summary-box {
+      background: #0B1626;
+      border: 1px solid rgba(201, 162, 39, 0.25);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #E2E8F0;
+      margin-bottom: 14px;
+    }
+
+    .summary-item {
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .summary-item:last-child {
+      border-bottom: none;
+    }
+
+    .summary-label {
+      color: #F5D06F;
+      font-weight: 600;
+    }
+
+    .btn-reserve {
+      width: 100%;
+      background: linear-gradient(135deg, #F5D06F, #C9A227 60%, #8A6A1B);
+      color: #0E1B2E;
+      border: none;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(201, 162, 39, 0.35);
+      transition: transform 0.15s, box-shadow 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .btn-reserve:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(201, 162, 39, 0.5);
+      color: #0E1B2E;
+    }
+
+    .final-note {
+      font-size: 0.74rem;
+      color: #8C9EB5;
+      text-align: center;
+      margin: 0 0 16px 0;
+      line-height: 1.35;
+    }
+
+    /* Rating section */
+    .rating-section {
+      border-top: 1px solid rgba(201, 162, 39, 0.2);
+      padding-top: 14px;
+      text-align: center;
+    }
+
+    .rating-title {
+      font-size: 0.78rem;
+      color: #FFFFFF;
+      margin-bottom: 8px;
+    }
+
+    .stars-container {
+      display: inline-flex;
+      gap: 6px;
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
+
+    .star-btn {
+      background: none;
+      border: none;
+      padding: 4px;
+      cursor: pointer;
+      line-height: 1;
+      color: #4A5B73;
+      transition: color 0.15s, transform 0.1s;
+    }
+    .star-btn svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+    .star-btn.active {
+      color: #F5D06F;
+    }
+    .star-btn:hover {
+      transform: scale(1.15);
+    }
+
+    .rating-thanks {
+      font-size: 0.75rem;
+      color: #F5D06F;
+      margin-top: 4px;
+      min-height: 18px;
+    }
+
+    .btn-restart {
+      background: transparent;
+      border: 1px solid rgba(201, 162, 39, 0.3);
+      color: #F5D06F;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 100%;
+      transition: all 0.2s;
+    }
+    .btn-restart:hover {
+      background: rgba(201, 162, 39, 0.12);
+      border-color: #F5D06F;
+    }
+
+    /* Footer */
+    .app-footer {
+      text-align: center;
+      padding: 14px 10px;
+      font-size: 0.72rem;
+      color: #7A8C9E;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      margin-top: auto;
+    }
+
+    /* Hidden */
+    .is-hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrapper">
+
+    <!-- Top Utility Bar -->
+    <div class="top-bar">
+      <button type="button" class="btn-back" id="btnRestartTop" aria-label="Voltar ao início da demonstração">
+        ← Início
+      </button>
+      <div class="status-pill">
+        • Protótipo demonstrativo · IA simulada
+      </div>
+    </div>
+
+    <!-- Official Logo Section -->
+    <div class="header-logo-section">
+      <svg viewBox="0 0 200 250" width="110" height="137" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo Prumo Estratégico">
+        <defs>
+          <linearGradient id="goldL" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#F5D06F"/><stop offset="0.55" stop-color="#C9A227"/><stop offset="1" stop-color="#8A6A1B"/>
+          </linearGradient>
+          <linearGradient id="goldR" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#8A6A1B"/><stop offset="0.45" stop-color="#C9A227"/><stop offset="1" stop-color="#F5D06F"/>
+          </linearGradient>
+          <linearGradient id="goldRing" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#F5D06F"/><stop offset="1" stop-color="#8A6A1B"/>
+          </linearGradient>
+        </defs>
+        <g stroke="url(#goldRing)" stroke-width="4" fill="none" stroke-linecap="round">
+          <path d="M 116.2 48.7 A 78 78 0 0 1 176.3 108.8"/>
+          <path d="M 176.3 141.2 A 78 78 0 0 1 116.2 201.3"/>
+          <path d="M 83.8 201.3 A 78 78 0 0 1 23.7 141.2"/>
+          <path d="M 23.7 108.8 A 78 78 0 0 1 83.8 48.7"/>
+        </g>
+        <g stroke="url(#goldRing)" stroke-width="2.5" fill="none" stroke-linecap="round">
+          <path d="M 111.1 62 A 64 64 0 0 1 163 113.9"/>
+          <path d="M 163 136.1 A 64 64 0 0 1 111.1 188"/>
+          <path d="M 88.9 188 A 64 64 0 0 1 37 136.1"/>
+          <path d="M 37 113.9 A 64 64 0 0 1 88.9 62"/>
+        </g>
+        <g stroke="#C9A227" stroke-width="4" stroke-linecap="round">
+          <line x1="4" y1="125" x2="18" y2="125"/>
+          <line x1="182" y1="125" x2="196" y2="125"/>
+        </g>
+        <polygon points="100,62 78,96 100,96" fill="url(#goldL)"/>
+        <polygon points="100,62 122,96 100,96" fill="url(#goldR)"/>
+        <rect x="74" y="96" width="52" height="14" fill="#B8912A"/>
+        <g stroke="#7A5C14" stroke-width="1.5">
+          <line x1="76" y1="100" x2="124" y2="100"/>
+          <line x1="76" y1="104" x2="124" y2="104"/>
+          <line x1="76" y1="108" x2="124" y2="108"/>
+        </g>
+        <polygon points="78,110 100,110 100,192" fill="url(#goldL)"/>
+        <polygon points="122,110 100,110 100,192" fill="url(#goldR)"/>
+        <line x1="100" y1="62" x2="100" y2="192" stroke="#7A5C14" stroke-width="1.2"/>
+        <circle cx="100" cy="152" r="8" fill="#0E1B2E" stroke="#7A5C14" stroke-width="2"/>
+      </svg>
+      <div class="brand-title">PRUMO ESTRATÉGICO</div>
+      <div class="brand-subtitle">Salões de Festa e Espaços para Eventos</div>
+    </div>
+
+    <!-- Informative Card -->
+    <div class="info-card">
+      <div class="info-card-title">O QUE VOCÊ ESTÁ VENDO</div>
+      <p class="info-card-desc">Cliente respondendo: as respostas viram um pedido de reserva organizado.</p>
+    </div>
+
+    <!-- Chat Card -->
+    <div class="chat-container" id="chatContainer">
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <div class="chat-header-left">
+          <div class="assistant-avatar" aria-hidden="true">P</div>
+          <div class="chat-header-info">
+            <div class="chat-header-name">Assistente Prumo IA</div>
+            <div class="chat-header-status">• Online · Simulando interação com o cliente</div>
+          </div>
+        </div>
+        <div class="chat-step-indicator" id="stepIndicator">Pergunta 1 de 7</div>
+      </div>
+
+      <!-- Messages Flow -->
+      <div class="chat-messages" id="chatMessages" role="log" aria-live="polite">
+        <!-- Messages injected dynamically -->
+      </div>
+
+      <!-- Quick Replies Pills -->
+      <div class="quick-replies" id="quickReplies">
+        <!-- Buttons injected dynamically -->
+      </div>
+
+      <!-- Text input footer inside chat -->
+      <form class="chat-input-bar" id="chatInputForm">
+        <input 
+          type="text" 
+          class="chat-text-input" 
+          id="chatTextInput" 
+          placeholder="Se preferir, escreva sua resposta..." 
+          autocomplete="off"
+        >
+        <button type="submit" class="btn-send" id="btnSend">Enviar</button>
+      </form>
+    </div>
+
+    <!-- Final Result Card (Hidden until last step is completed) -->
+    <div class="final-card is-hidden" id="finalCard">
+      <h2 class="final-card-title">Quase lá: sua reserva está sendo encaminhada</h2>
+      
+      <div class="summary-box" id="summaryBox">
+        <!-- Formatted Summary items injected here -->
+      </div>
+
+      <a href="#" target="_blank" rel="noopener noreferrer" class="btn-reserve" id="btnWhatsappReserve">
+        RESERVAR MINHA DATA
+      </a>
+
+      <p class="final-note">
+        No produto real, este pedido de reserva chega direto no WhatsApp do salão, que confirma a disponibilidade da sua data.
+      </p>
+
+      <!-- Rating Block -->
+      <div class="rating-section">
+        <div class="rating-title">Como foi sua experiência com este atendimento?</div>
+        <div class="stars-container" id="starsContainer" role="radiogroup" aria-label="Avaliação do atendimento">
+          <button type="button" class="star-btn" data-star="1" aria-label="1 estrela">
+            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </button>
+          <button type="button" class="star-btn" data-star="2" aria-label="2 estrelas">
+            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </button>
+          <button type="button" class="star-btn" data-star="3" aria-label="3 estrelas">
+            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </button>
+          <button type="button" class="star-btn" data-star="4" aria-label="4 estrelas">
+            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </button>
+          <button type="button" class="star-btn" data-star="5" aria-label="5 estrelas">
+            <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          </button>
+        </div>
+        <div class="rating-thanks" id="ratingThanks"></div>
+
+        <button type="button" class="btn-restart" id="btnRestart">Recomeçar simulação</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    Protótipo de demonstração · Prumo Estratégico | (12) 99194-5078
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Chat state
+      const state = {
+        step: 1, // 1 to 8 (8 is optional)
+        data: {
+          evento: '',
+          dataDesejada: '',
+          convidados: '',
+          conheceSalao: '',
+          buffet: '',
+          nome: '',
+          whatsapp: '',
+          observacoes: ''
+        },
+        isTyping: false
+      };
+
+      const chatMessages = document.getElementById('chatMessages');
+      const quickReplies = document.getElementById('quickReplies');
+      const chatInputForm = document.getElementById('chatInputForm');
+      const chatTextInput = document.getElementById('chatTextInput');
+      const btnSend = document.getElementById('btnSend');
+      const stepIndicator = document.getElementById('stepIndicator');
+      const finalCard = document.getElementById('finalCard');
+      const summaryBox = document.getElementById('summaryBox');
+      const btnWhatsappReserve = document.getElementById('btnWhatsappReserve');
+      const btnRestart = document.getElementById('btnRestart');
+      const btnRestartTop = document.getElementById('btnRestartTop');
+      const starsContainer = document.getElementById('starsContainer');
+      const ratingThanks = document.getElementById('ratingThanks');
+
+      // Helper to scroll messages to bottom
+      function scrollToBottom() {
+        setTimeout(() => {
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 50);
+      }
+
+      // Add message bubble
+      function addBubble(text, sender = 'assistant') {
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble bubble-${sender}`;
+        bubble.textContent = text;
+        chatMessages.appendChild(bubble);
+        scrollToBottom();
+      }
+
+      // Show typing indicator
+      function showTypingIndicator() {
+        const typing = document.createElement('div');
+        typing.className = 'typing-indicator';
+        typing.id = 'typingIndicator';
+        typing.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+        chatMessages.appendChild(typing);
+        scrollToBottom();
+      }
+
+      // Remove typing indicator
+      function removeTypingIndicator() {
+        const typing = document.getElementById('typingIndicator');
+        if (typing) {
+          typing.remove();
+        }
+      }
+
+      // Assistant speech sequence with typing delay
+      function assistantSay(messages, callback, delay = 650) {
+        state.isTyping = true;
+        showTypingIndicator();
+        btnSend.disabled = true;
+
+        const queue = Array.isArray(messages) ? [...messages] : [messages];
+
+        function next() {
+          if (queue.length === 0) {
+            removeTypingIndicator();
+            state.isTyping = false;
+            btnSend.disabled = false;
+            if (callback) callback();
+            return;
+          }
+          const msg = queue.shift();
+          setTimeout(() => {
+            removeTypingIndicator();
+            addBubble(msg, 'assistant');
+            if (queue.length > 0) {
+              showTypingIndicator();
+              setTimeout(next, delay);
+            } else {
+              state.isTyping = false;
+              btnSend.disabled = false;
+              if (callback) callback();
+            }
+          }, delay);
+        }
+
+        setTimeout(next, 300);
+      }
+
+      // Render step pills and inputs
+      function renderStep() {
+        quickReplies.innerHTML = '';
+        chatTextInput.value = '';
+
+        if (state.step <= 7) {
+          stepIndicator.textContent = `Pergunta ${state.step} de 7`;
+          stepIndicator.classList.remove('is-hidden');
+        } else if (state.step === 8) {
+          stepIndicator.textContent = 'Observação adicional';
+          stepIndicator.classList.remove('is-hidden');
+        } else {
+          stepIndicator.classList.add('is-hidden');
+        }
+
+        if (state.step === 1) {
+          chatTextInput.placeholder = 'Ou descreva o tipo da festa...';
+          const options = [
+            'Aniversário',
+            'Casamento',
+            'Chá revelação ou chá de bebê',
+            'Debutante/15 anos',
+            'Corporativo',
+            'Batizado',
+            'Outro (descreva)'
+          ];
+          options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'pill-btn';
+            btn.textContent = opt;
+            btn.addEventListener('click', () => {
+              if (opt === 'Outro (descreva)') {
+                chatTextInput.focus();
+                chatTextInput.placeholder = 'Descreva seu tipo de evento...';
+              } else {
+                handleUserResponse(opt);
+              }
+            });
+            quickReplies.appendChild(btn);
+          });
+        } 
+        else if (state.step === 2) {
+          chatTextInput.placeholder = 'Ou digite uma data ou mês específico...';
+          const options = [
+            'Este mês',
+            'Próximo mês',
+            'Em 2 a 3 meses',
+            'Ainda estou definindo'
+          ];
+          options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'pill-btn';
+            btn.textContent = opt;
+            btn.addEventListener('click', () => handleUserResponse(opt));
+            quickReplies.appendChild(btn);
+          });
+        }
+        else if (state.step === 3) {
+          chatTextInput.placeholder = 'Ou digite a quantidade aproximada...';
+          const options = ['Até 50', '50 a 100', '100 a 150', 'Mais de 150'];
+          options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'pill-btn';
+            btn.textContent = opt;
+            btn.addEventListener('click', () => handleUserResponse(opt));
+            quickReplies.appendChild(btn);
+          });
+        }
+        else if (state.step === 4) {
+          chatTextInput.placeholder = 'Selecione ou escreva sua resposta...';
+          const options = ['Já conheço', 'Primeira vez'];
+          options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'pill-btn';
+            btn.textContent = opt;
+            btn.addEventListener('click', () => handleUserResponse(opt));
+            quickReplies.appendChild(btn);
+          });
+        }
+        else if (state.step === 5) {
+          chatTextInput.placeholder = 'Selecione ou escreva sua resposta...';
+          const options = ['Só o espaço', 'Com buffet', 'Ainda não sei'];
+          options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'pill-btn';
+            btn.textContent = opt;
+            btn.addEventListener('click', () => handleUserResponse(opt));
+            quickReplies.appendChild(btn);
+          });
+        }
+        else if (state.step === 6) {
+          chatTextInput.placeholder = 'Digite seu nome completo...';
+          chatTextInput.focus();
+        }
+        else if (state.step === 7) {
+          chatTextInput.placeholder = 'Digite seu WhatsApp com DDD...';
+          chatTextInput.focus();
+        }
+        else if (state.step === 8) {
+          chatTextInput.placeholder = 'Escreva aqui sua observação ou pergunta...';
+          const skipBtn = document.createElement('button');
+          skipBtn.type = 'button';
+          skipBtn.className = 'pill-btn pill-secondary';
+          skipBtn.textContent = 'Não tenho nada a adicionar';
+          skipBtn.addEventListener('click', () => handleUserResponse('Não tenho nada a adicionar'));
+          quickReplies.appendChild(skipBtn);
+          chatTextInput.focus();
+        }
+        else {
+          quickReplies.innerHTML = '';
+          chatInputForm.classList.add('is-hidden');
+        }
+      }
+
+      // Handle user reply
+      function handleUserResponse(text) {
+        if (!text || state.isTyping) return;
+        const cleaned = text.trim();
+        if (!cleaned) return;
+
+        addBubble(cleaned, 'user');
+        quickReplies.innerHTML = '';
+        chatTextInput.value = '';
+
+        if (state.step === 1) {
+          state.data.evento = cleaned;
+          let feedback = "Adoramos festas diferentes! Conte um pouco que o salão confirma se o espaço combina. Qual a data pretendida?";
+          const lower = cleaned.toLowerCase();
+          if (lower.includes('aniversário') || lower.includes('aniversario')) {
+            feedback = "Que festa boa! O espaço certo faz toda a diferença para os convidados se sentirem à vontade. Qual a data que você tem em mente?";
+          } else if (lower.includes('casamento')) {
+            feedback = "Que momento especial! O salão é o cenário do grande dia: garantir a data com antecedência é o que assegura a melhor agenda. Qual a data pretendida?";
+          } else if (lower.includes('chá') || lower.includes('cha') || lower.includes('bebê') || lower.includes('revelação')) {
+            feedback = "Que momento lindo! Um espaço acolhedor deixa o chá ainda mais especial para receber quem você ama. Qual a data pretendida?";
+          } else if (lower.includes('debutante') || lower.includes('15')) {
+            feedback = "Que dia inesquecível! Os 15 anos pedem um espaço à altura da festa. Qual a data pretendida?";
+          } else if (lower.includes('corporativo') || lower.includes('empresa')) {
+            feedback = "Excelente! Um espaço bem escolhido valoriza o evento e a experiência dos convidados. Qual a data pretendida?";
+          } else if (lower.includes('batizado')) {
+            feedback = "Que celebração especial! Um espaço confortável recebe bem a família toda. Qual a data pretendida?";
+          }
+
+          state.step = 2;
+          assistantSay(feedback, () => renderStep());
+        }
+        else if (state.step === 2) {
+          state.data.dataDesejada = cleaned;
+          let feedback = "Ótimo registro de data! O salão já anota para verificar o calendário.";
+          const lower = cleaned.toLowerCase();
+          if (lower.includes('este mês') || lower.includes('este mes')) {
+            feedback = "Vamos com tudo! Datas próximas preenchem rápido: vou registrar sua solicitação para o salão confirmar a disponibilidade hoje mesmo.";
+          } else if (lower.includes('próximo') || lower.includes('proximo')) {
+            feedback = "Ótimo! Com um mês de antecedência ainda há boas janelas na agenda. O salão vai confirmar a disponibilidade da sua data.";
+          } else if (lower.includes('2 a 3') || lower.includes('meses')) {
+            feedback = "Perfeito! Antecedência é o que garante a melhor data. O salão já registra sua solicitação na agenda.";
+          } else if (lower.includes('definindo') || lower.includes('ainda')) {
+            feedback = "Sem pressa! O salão te ajuda a fechar a data que combinar melhor com a sua festa.";
+          } else {
+            feedback = "Data registrada! O salão confere a disponibilidade na agenda.";
+          }
+
+          state.step = 3;
+          assistantSay([feedback, "Quantos convidados aproximadamente?"], () => renderStep());
+        }
+        else if (state.step === 3) {
+          state.data.convidados = cleaned;
+          const feedback = "Anotado! Com esse número, o salão confirma se o espaço acomoda todos com conforto.";
+          state.step = 4;
+          assistantSay([feedback, "Já conhece o salão ou é a primeira vez?"], () => renderStep());
+        }
+        else if (state.step === 4) {
+          state.data.conheceSalao = cleaned;
+          let feedback = "Ótimo! Na confirmação, o salão te apresenta o espaço e as opções de pacote.";
+          const lower = cleaned.toLowerCase();
+          if (lower.includes('já') || lower.includes('ja') || lower.includes('conheço')) {
+            feedback = "Que bom! Sendo conhecido do salão, a confirmação da reserva fica ainda mais rápida.";
+          }
+          state.step = 5;
+          assistantSay([feedback, "Quer incluir buffet ou só o espaço?"], () => renderStep());
+        }
+        else if (state.step === 5) {
+          state.data.buffet = cleaned;
+          const feedback = "Registrado! O salão vai te passar as opções de pacote que combinam com a sua festa.";
+          state.step = 6;
+          assistantSay([feedback, "Para finalizar, seu nome:"], () => renderStep());
+        }
+        else if (state.step === 6) {
+          state.data.nome = cleaned;
+          state.step = 7;
+          assistantSay("E o seu melhor WhatsApp:", () => renderStep());
+        }
+        else if (state.step === 7) {
+          state.data.whatsapp = cleaned;
+          const nomePrimeiro = state.data.nome.split(' ')[0] || state.data.nome;
+          const feedback = `Perfeito, ${nomePrimeiro}! Sua solicitação de reserva está praticamente encaminhada. O salão vai te chamar nesse número para CONFIRMAR a disponibilidade da sua data.`;
+          state.step = 8;
+          assistantSay([feedback, "Tem mais alguma informação que você gostaria de adicionar? (opcional)"], () => renderStep());
+        }
+        else if (state.step === 8) {
+          if (cleaned !== 'Não tenho nada a adicionar') {
+            state.data.observacoes = cleaned;
+          }
+          state.step = 9;
+          assistantSay("Tudo pronto! Seu resumo está pronto logo abaixo para envio da reserva.", () => {
+            renderStep();
+            showFinalScreen();
+          });
+        }
+      }
+
+      // Show formatted final summary card
+      function showFinalScreen() {
+        const d = state.data;
+        const nomeFormatado = d.nome || 'Cliente';
+        const obsFormatada = d.observacoes ? d.observacoes : 'Nenhuma observação extra';
+
+        summaryBox.innerHTML = `
+          <div class="summary-item"><span class="summary-label">Cliente:</span> ${nomeFormatado}</div>
+          <div class="summary-item"><span class="summary-label">Evento:</span> ${d.evento || 'Não informado'}</div>
+          <div class="summary-item"><span class="summary-label">Data pretendida:</span> ${d.dataDesejada || 'A definir'}</div>
+          <div class="summary-item"><span class="summary-label">Convidados:</span> ${d.convidados || 'Não informado'}</div>
+          <div class="summary-item"><span class="summary-label">Buffet:</span> ${d.buffet || 'A definir'}</div>
+          <div class="summary-item"><span class="summary-label">Primeira vez no salão:</span> ${d.conheceSalao || 'Não informado'}</div>
+          <div class="summary-item"><span class="summary-label">WhatsApp:</span> ${d.whatsapp || 'Não informado'}</div>
+          <div class="summary-item"><span class="summary-label">Observações:</span> ${obsFormatada}</div>
+        `;
+
+        // Pre-filled WhatsApp message
+        let textMsg = `Olá! Gostaria de verificar a disponibilidade de reserva do salão:\n\n`;
+        textMsg += `• Cliente: ${nomeFormatado}\n`;
+        textMsg += `• Evento: ${d.evento}\n`;
+        textMsg += `• Data pretendida: ${d.dataDesejada}\n`;
+        textMsg += `• Convidados: ${d.convidados}\n`;
+        textMsg += `• Pacote: ${d.buffet}\n`;
+        textMsg += `• Já conhece o salão: ${d.conheceSalao}\n`;
+        textMsg += `• WhatsApp: ${d.whatsapp}\n`;
+        if (d.observacoes) {
+          textMsg += `• Observações: ${d.observacoes}\n`;
+        }
+        textMsg += `\nAguardo confirmação da disponibilidade da agenda do espaço.`;
+
+        const waUrl = `https://wa.me/5512991945078?text=${encodeURIComponent(textMsg)}`;
+        btnWhatsappReserve.href = waUrl;
+
+        finalCard.classList.remove('is-hidden');
+        finalCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      // Form submit handler
+      chatInputForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const value = chatTextInput.value.trim();
+        if (value) {
+          handleUserResponse(value);
+        }
+      });
+
+      // Reset routine
+      function resetChat() {
+        state.step = 1;
+        state.data = {
+          evento: '',
+          dataDesejada: '',
+          convidados: '',
+          conheceSalao: '',
+          buffet: '',
+          nome: '',
+          whatsapp: '',
+          observacoes: ''
+        };
+        state.isTyping = false;
+        chatMessages.innerHTML = '';
+        quickReplies.innerHTML = '';
+        chatInputForm.classList.remove('is-hidden');
+        finalCard.classList.add('is-hidden');
+        ratingThanks.textContent = '';
+        document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+
+        // Initial welcome message
+        assistantSay("Olá! Seja muito bem-vindo ao atendimento do salão. Para verificarmos a disponibilidade para a sua festa, qual é o evento que você está planejando?", () => {
+          renderStep();
+        }, 300);
+      }
+
+      btnRestart.addEventListener('click', resetChat);
+      btnRestartTop.addEventListener('click', resetChat);
+
+      // Star rating logic
+      starsContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('.star-btn');
+        if (!btn) return;
+        const rating = parseInt(btn.dataset.star, 10);
+        document.querySelectorAll('.star-btn').forEach(b => {
+          const starVal = parseInt(b.dataset.star, 10);
+          if (starVal <= rating) {
+            b.classList.add('active');
+          } else {
+            b.classList.remove('active');
+          }
+        });
+        ratingThanks.textContent = "Obrigado! Sua avaliação ajuda a melhorar.";
+      });
+
+      // Start on load
+      resetChat();
+    });
+  </script>
+<script>
+/* Skip artifact shell — fixed helpers served beside every artifact. */
+(function () {
+  "use strict";
+
+  var fmt = {
+    num: function (v, opts) { return new Intl.NumberFormat("pt-BR", opts || {}).format(v); },
+    brl: function (v) { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v); },
+    pct: function (v) { return new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 1 }).format(v); }
+  };
+
+  // axisFmt keeps axis tick labels short (compact notation) so long values
+  // (e.g. full BRL amounts) never clip against the plot edge.
+  function axisFmt(v) {
+    return fmt.num(v, { notation: "compact", maximumFractionDigits: 1 });
+  }
+
+  // format accepts a function OR one of the fmt names ("num" | "brl" | "pct").
+  function coerceFormat(spec) {
+    if (typeof spec === "function") return spec;
+    if (typeof spec === "string" && fmt[spec]) return fmt[spec];
+    return function (v) { return fmt.num(v); };
+  }
+
+  function accent() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2563eb";
+  }
+  function mutedColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim() || "#5b6472";
+  }
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+  function frame(el, w, h) {
+    var svg = svgEl("svg", { viewBox: "0 0 " + w + " " + h, role: "img" });
+    el.innerHTML = "";
+    el.appendChild(svg);
+    return svg;
+  }
+
+  // maxOf guards the axis scale: empty values would give -Infinity (truthy,
+  // so "|| 1" can't catch it) and a non-positive max would flip the chart.
+  function maxOf(values) {
+    var m = values.length ? Math.max.apply(null, values) : 0;
+    return m > 0 ? m : 1;
+  }
+
+  // bar(el, {labels:[], values:[], color?, format?}) — vertical bar chart.
+  function bar(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 12, plotH = H - padT - padB;
+    var step = plotW / n, bw = Math.min(step * 0.62, 64);
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 12, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    cfg.values.forEach(function (v, i) {
+      var bh = Math.max(0, (v / max) * plotH);
+      var x = padL + i * step + (step - bw) / 2;
+      var y = padT + plotH - bh;
+      var r = svgEl("rect", { x: x, y: y, width: bw, height: bh, rx: 4, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(v);
+      r.appendChild(t);
+      svg.appendChild(r);
+      var tx = svgEl("text", { x: x + bw / 2, y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // line(el, {labels:[], values:[], color?, format?}) — single-series line.
+  function line(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 16, plotH = H - padT - padB;
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 16, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    var pts = cfg.values.map(function (v, i) {
+      var x = padL + (n === 1 ? plotW / 2 : (plotW * i) / (n - 1));
+      var y = padT + plotH - (v / max) * plotH;
+      return [x, y];
+    });
+    var d = pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ");
+    svg.appendChild(svgEl("path", { d: d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" }));
+    pts.forEach(function (p, i) {
+      var c = svgEl("circle", { cx: p[0], cy: p[1], r: 3.5, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(cfg.values[i]);
+      c.appendChild(t);
+      svg.appendChild(c);
+      var tx = svgEl("text", { x: p[0], y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // donut(el, {labels:[], values:[], colors?}) — donut with center total.
+  function donut(el, cfg) {
+    var W = 320, H = 280, cx = W / 2, cy = H / 2, R = 92, r = 58;
+    var svg = frame(el, W, H);
+    var total = cfg.values.reduce(function (a, b) { return a + b; }, 0) || 1;
+    var palette = cfg.colors || [accent(), "#1baf7a", "#eda100", "#e34948", "#4a3aa7", "#e87ba4"];
+    var a0 = -Math.PI / 2;
+    cfg.values.forEach(function (v, i) {
+      var a1 = a0 + (v / total) * Math.PI * 2;
+      var large = a1 - a0 > Math.PI ? 1 : 0;
+      var p = ["M", cx + R * Math.cos(a0), cy + R * Math.sin(a0),
+        "A", R, R, 0, large, 1, cx + R * Math.cos(a1), cy + R * Math.sin(a1),
+        "L", cx + r * Math.cos(a1), cy + r * Math.sin(a1),
+        "A", r, r, 0, large, 0, cx + r * Math.cos(a0), cy + r * Math.sin(a0), "Z"].join(" ");
+      var path = svgEl("path", { d: p, fill: palette[i % palette.length] });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + fmt.num(v) + " (" + fmt.pct(v / total) + ")";
+      path.appendChild(t);
+      svg.appendChild(path);
+      a0 = a1;
+    });
+    var center = svgEl("text", { x: cx, y: cy + 5, "text-anchor": "middle", "font-size": 20, "font-weight": 650, fill: "currentColor" });
+    center.textContent = fmt.num(total);
+    svg.appendChild(center);
+  }
+
+  window.skipShell = { fmt: fmt };
+  window.skipChart = { bar: bar, line: line, donut: donut };
+})();
+
+</script>
+</body>
+</html>
